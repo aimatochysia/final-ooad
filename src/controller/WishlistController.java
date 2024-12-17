@@ -28,7 +28,7 @@ public class WishlistController {
 		String query = String.format("INSERT INTO Wishlist (BuyerID, ItemID) VALUES (%d, %d)", wishlist.getBuyerID(),
 				wishlist.getItemID());
 		db.execute(query);
-		System.out.println("Item added to wishlist successfully.");
+		System.out.println("Item has been added to Wishlist!");
 	}
 
 	public List<Item> viewWishlist(int buyerID) {
@@ -38,9 +38,9 @@ public class WishlistController {
 		List<Item> wishlistItems = new ArrayList<>();
 		try {
 			while (rs.next()) {
-				wishlistItems.add(new Item(rs.getInt("ItemID"), 0, rs.getString("ItemName"), rs.getString("Category"),
-						rs.getString("Size"), rs.getDouble("Price"), rs.getString("Status"),
-						rs.getString("DeclineReason")));
+				wishlistItems.add(new Item(rs.getInt("ItemID"), 0, rs.getString("ItemName"), rs.getString("ItemCategory"),
+						rs.getString("ItemSize"), rs.getDouble("ItemPrice"), rs.getString("ItemStatus"),
+						rs.getString("ReasonForDecline")));
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -52,6 +52,6 @@ public class WishlistController {
 		String query = String.format("DELETE FROM Wishlist WHERE WishlistID = %d AND BuyerID = %d",
 				wishlist.getWishlistID(), wishlist.getBuyerID());
 		db.execute(query);
-		System.out.println("Item removed from wishlist successfully.");
+		System.out.println("Item has been removed from Wishlist!");
 	}
 }

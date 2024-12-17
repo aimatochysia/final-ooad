@@ -26,45 +26,45 @@ public class ItemController {
 	public void uploadItem(Item item) {
 		if (validateItemDetails(item)) {
 			String query = String.format(
-					"INSERT INTO Items (SellerID, ItemName, Category, Size, Price, Status) VALUES (%d, '%s', '%s', '%s', %.2f, 'Pending')",
-					item.getSellerID(), item.getItemName(), item.getCategory(), item.getSize(), item.getPrice());
+					"INSERT INTO Items (ItemName, itemCategory, itemSize, itemPrice, SellerID, itemStatus) VALUES ('%s', '%s', '%s', %.2f, %d, 'Pending')",
+					item.getItemName(), item.getItemCategory(), item.getItemSize(), item.getItemPrice(), item.getSellerID());
 			db.execute(query);
-			System.out.println("Item uploaded successfully. Pending admin approval.");
+			System.out.println("Item has been uploaded. Waiting for admin approval!");
 		}
 	}
 
 	public void editItem(Item item) {
 		if (validateItemDetails(item)) {
 			String query = String.format(
-					"UPDATE Items SET ItemName = '%s', Category = '%s', Size = '%s', Price = %.2f WHERE ItemID = %d AND Status = 'Approved'",
-					item.getItemName(), item.getCategory(), item.getSize(), item.getPrice(), item.getItemID());
+					"UPDATE Items SET ItemName = '%s', itemCategory = '%s', itemSize = '%s', itemPrice = %.2f WHERE ItemID = %d AND itemStatus = 'Approved'",
+					item.getItemName(), item.getItemCategory(), item.getItemSize(), item.getItemPrice(), item.getItemID());
 			db.execute(query);
-			System.out.println("Item details updated successfully.");
+			System.out.println("Item details has been updated.");
 		}
 	}
 
 	public void deleteItem(int itemID, int sellerID) {
-		String query = String.format("DELETE FROM Items WHERE ItemID = %d AND SellerID = %d AND Status = 'Approved'",
+		String query = String.format("DELETE FROM Items WHERE ItemID = %d AND SellerID = %d AND itemStatus = 'Approved'",
 				itemID, sellerID);
 		db.execute(query);
-		System.out.println("Item deleted successfully.");
+		System.out.println("Item has been deleted.");
 	}
 	
 	public List<Item> viewPendingItems() {
-	    String query = "SELECT * FROM Items WHERE Status = 'Pending'";
+	    String query = "SELECT * FROM Items WHERE itemStatus = 'Pending'";
 	    ResultSet rs = db.execQuery(query);
 	    List<Item> items = new ArrayList<>();
 	    try {
 	        while (rs.next()) {
 	            items.add(new Item(
 	                rs.getInt("ItemID"),
-	                rs.getInt("SellerID"),
 	                rs.getString("ItemName"),
-	                rs.getString("Category"),
-	                rs.getString("Size"),
-	                rs.getDouble("Price"),
-	                rs.getString("Status"),
-	                rs.getString("DeclineReason")
+	                rs.getString("itemCategory"),
+	                rs.getString("itemSize"),
+	                rs.getDouble("itemPrice"),
+	                rs.getInt("SellerID"),
+	                rs.getString("itemStatus"),
+	                rs.getString("reasonForDecline")
 	            ));
 	        }
 	    } catch (SQLException e) {
@@ -74,14 +74,13 @@ public class ItemController {
 	}
 	
 	public List<Item> viewItems(int sellerID) {
-	    String query = String.format("SELECT * FROM Items WHERE Status = 'Approved' AND SellerID = %d", sellerID);
+	    String query = String.format("SELECT * FROM Items WHERE itemStatus = 'Approved' AND SellerID = %d", sellerID);
 	    ResultSet rs = db.execQuery(query);
 	    List<Item> items = new ArrayList<>();
 	    try {
 	        while (rs.next()) {
-	            items.add(new Item(rs.getInt("ItemID"), rs.getInt("SellerID"), rs.getString("ItemName"),
-	                    rs.getString("Category"), rs.getString("Size"), rs.getDouble("Price"), 
-	                    rs.getString("Status"), rs.getString("DeclineReason")));
+	            items.add(new Item(rs.getInt("ItemID"), rs.getString("ItemName"), rs.getString("itemCategory"), rs.getString("itemSize"), 
+	            		rs.getDouble("itemPrice"), rs.getInt("SellerID"), rs.getString("itemStatus"), rs.getString("reasonForDecline")));
 	        }
 	    } catch (SQLException e) {
 	        e.printStackTrace();
@@ -91,21 +90,68 @@ public class ItemController {
 
 	private boolean validateItemDetails(Item item) {
 		if (item.getItemName() == null || item.getItemName().trim().length() < 3) {
-			System.out.println("Item name must be at least 3 characters long.");
+			System.out.println("Items name must at least be 3 character long!");
 			return false;
 		}
-		if (item.getCategory() == null || item.getCategory().trim().length() < 3) {
-			System.out.println("Item category must be at least 3 characters long.");
+		if (item.getItemCategory() == null || item.getItemCategory().trim().length() < 3) {
+			System.out.println("Items category must at least be 3 character long!");
 			return false;
 		}
-		if (item.getSize() == null || item.getSize().trim().isEmpty()) {
-			System.out.println("Item size cannot be empty.");
+		if (item.getItemSize() == null || item.getItemSize().trim().isEmpty()) {
+			System.out.println("Item size cannot be left empty!");
 			return false;
 		}
-		if (item.getPrice() <= 0) {
-			System.out.println("Item price must be greater than zero.");
+		if (item.getItemPrice() <= 0) {
+			System.out.println("Item price cannot be 0 or empty!");
 			return false;
 		}
 		return true;
+	}
+	
+	// view items in buyer views
+	public List<Item> viewItemsToBuy() {
+	    String query = String.format("SELECT * FROM Items WHERE itemStatus = 'Approved'");
+	    ResultSet rs = db.execQuery(query);
+	    List<Item> items = new ArrayList<>();
+	    try {
+	    	while (rs.next()) {
+	            items.add(new Item(rs.getInt("ItemID"), rs.getString("ItemName"), rs.getString("itemCategory"), rs.getString("itemSize"), 
+	            		rs.getDouble("itemPrice"), rs.getInt("SellerID"), rs.getString("itemStatus"), rs.getString("reasonForDecline")));
+	        }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
+	    return items;
+	}
+	
+	// view items in buyer wishlist
+	public List<Item> viewItemsWishlist(int buyerID) {
+	    String query = String.format(
+	            "SELECT i.ItemID, i.ItemName, i.itemCategory, i.itemSize, i.itemPrice " +
+	            "FROM wishlist w " +
+	            "JOIN items i ON w.ItemID = i.ItemID " +
+	            "WHERE w.BuyerID = %d", 
+	            buyerID
+	    );
+	    
+	    ResultSet rs = db.execQuery(query);
+	    List<Item> items = new ArrayList<>();
+	    try {
+	        while (rs.next()) {
+	            items.add(new Item(
+	                rs.getInt("ItemID"),
+	                0, 
+	                rs.getString("ItemName"),
+	                rs.getString("itemCategory"),
+	                rs.getString("itemSize"),
+	                rs.getDouble("itemPrice"),
+	                null, 
+	                null  
+	            ));
+	        }
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+	    }
+	    return items;
 	}
 }
