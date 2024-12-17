@@ -7,9 +7,10 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
 import controller.ItemController;
+import controller.UserController;
 import database.DatabaseConnector;
 import model.Item;
-import views.auth.Login;
+import views.auth.LoginView;
 
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -20,6 +21,8 @@ public class AdminView {
 	private VBox mainContainer;
 	private TableView<Item> itemTable;
 	private ItemController itemController;
+	private UserController userController;
+	
 
 	public AdminView(Stage stage) {
 		this.stage = stage;
@@ -33,11 +36,11 @@ public class AdminView {
 		mainContainer.setAlignment(Pos.CENTER);
 
 		Label headerLabel = new Label("Admin Dashboard");
-		headerLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold;");
+		headerLabel.setStyle("-fx-font-size: 28px; -fx-font-weight: bold;");
 
 		setupItemTable();
 
-		HBox buttonContainer = new HBox(10);
+		HBox buttonContainer = new HBox(12);
 		buttonContainer.setAlignment(Pos.CENTER);
 
 		Button approveButton = new Button("Approve Item");
@@ -65,17 +68,17 @@ public class AdminView {
 		TableColumn<Item, String> nameColumn = new TableColumn<>("Item Name");
 		nameColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getItemName()));
 
-		TableColumn<Item, String> categoryColumn = new TableColumn<>("Category");
-		categoryColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getCategory()));
+		TableColumn<Item, String> categoryColumn = new TableColumn<>("Item Category");
+		categoryColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getItemCategory()));
 
-		TableColumn<Item, String> sizeColumn = new TableColumn<>("Size");
-		sizeColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getSize()));
+		TableColumn<Item, String> sizeColumn = new TableColumn<>("Item Size");
+		sizeColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getItemSize()));
 
-		TableColumn<Item, Double> priceColumn = new TableColumn<>("Price");
-		priceColumn.setCellValueFactory(data -> new SimpleObjectProperty<>(data.getValue().getPrice()));
+		TableColumn<Item, Double> priceColumn = new TableColumn<>("Item Price");
+		priceColumn.setCellValueFactory(data -> new SimpleObjectProperty<>(data.getValue().getItemPrice()));
 
-		TableColumn<Item, String> statusColumn = new TableColumn<>("Status");
-		statusColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getStatus()));
+		TableColumn<Item, String> statusColumn = new TableColumn<>("Item Status");
+		statusColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getItemStatus()));
 
 		itemTable.getColumns().addAll(idColumn, nameColumn, categoryColumn, sizeColumn, priceColumn, statusColumn);
 
@@ -93,7 +96,7 @@ public class AdminView {
 	private void handleApproveItem() {
 		Item selectedItem = itemTable.getSelectionModel().getSelectedItem();
 		if (selectedItem == null) {
-			showAlert("Error", "Please select an item to approve.");
+			showAlert("Error", "Select an item to be approved!");
 			return;
 		}
 
@@ -101,40 +104,40 @@ public class AdminView {
 				selectedItem.getItemID());
 		DatabaseConnector.getInstance().execute(query);
 
-		showAlert("Success", "Item approved successfully.");
+		showAlert("Success", "Item has been approved!");
 		refreshItemList();
 	}
 
 	private void handleDeclineItem() {
 		Item selectedItem = itemTable.getSelectionModel().getSelectedItem();
 		if (selectedItem == null) {
-			showAlert("Error", "Please select an item to decline.");
+			showAlert("Error", "Select an item to be declined!");
 			return;
 		}
 
 		TextInputDialog dialog = new TextInputDialog();
-		dialog.setTitle("Decline Item");
-		dialog.setHeaderText("Enter reason for declining:");
+		dialog.setTitle("Decline Item?");
+		dialog.setHeaderText("Enter reason for declining the items:");
 		dialog.setContentText("Reason:");
 
 		dialog.showAndWait().ifPresent(reason -> {
 			if (reason.trim().isEmpty()) {
-				showAlert("Error", "Decline reason cannot be empty.");
+				showAlert("Error", "Reason must be filled!");
 				return;
 			}
 
-			String query = String.format("UPDATE Items SET Status = 'Declined', DeclineReason = '%s' WHERE ItemID = %d",
+			String query = String.format("UPDATE Items SET Status = 'Declined', ReasonForDecline = '%s' WHERE ItemID = %d",
 					reason, selectedItem.getItemID());
 			DatabaseConnector.getInstance().execute(query);
 
-			showAlert("Success", "Item declined successfully.");
+			showAlert("Success", "Item has been declined.");
 			refreshItemList();
 		});
 	}
 
 	private void handleLogout() {
 		try {
-			new Login().start(stage);
+			new LoginView().start(stage);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

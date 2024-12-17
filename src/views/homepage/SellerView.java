@@ -19,6 +19,7 @@ import model.Offer;
 import views.auth.LoginView;
 
 public class SellerView {
+	
 	private Stage stage;
 	private Scene scene;
 	private VBox mainContainer;
@@ -37,12 +38,12 @@ public class SellerView {
 	}
 
 	private void initialize() {
-		mainContainer = new VBox(20);
-		mainContainer.setPadding(new Insets(20));
+		mainContainer = new VBox(24);
+		mainContainer.setPadding(new Insets(24));
 		mainContainer.setAlignment(Pos.CENTER);
 
 		Label headerLabel = new Label("Seller Dashboard");
-		headerLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold;");
+		headerLabel.setStyle("-fx-font-size: 28px; -fx-font-weight: bold;");
 
 		TabPane tabPane = new TabPane();
 
@@ -61,13 +62,13 @@ public class SellerView {
 
 		mainContainer.getChildren().addAll(headerLabel, tabPane, logoutButton);
 
-		scene = new Scene(mainContainer, 800, 600);
-		stage.setTitle("CaLouselF - Seller Dashboard");
+		scene = new Scene(mainContainer, 900, 650);
+		stage.setTitle("Seller Dashboard");
 	}
 
 	private void setupItemsTab(Tab tab) {
-		VBox container = new VBox(10);
-		container.setPadding(new Insets(10));
+		VBox container = new VBox(12);
+		container.setPadding(new Insets(12));
 
 		itemTable = new TableView<>();
 
@@ -77,18 +78,18 @@ public class SellerView {
 		TableColumn<Item, String> nameColumn = new TableColumn<>("Item Name");
 		nameColumn.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getItemName()));
 
-		TableColumn<Item, String> categoryColumn = new TableColumn<>("Category");
-		categoryColumn.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getCategory()));
+		TableColumn<Item, String> categoryColumn = new TableColumn<>("Item Category");
+		categoryColumn.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getItemCategory()));
 
-		TableColumn<Item, String> sizeColumn = new TableColumn<>("Size");
-		sizeColumn.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getSize()));
+		TableColumn<Item, String> sizeColumn = new TableColumn<>("Item Size");
+		sizeColumn.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getitemSize()));
 
-		TableColumn<Item, Double> priceColumn = new TableColumn<>("Price");
+		TableColumn<Item, Double> priceColumn = new TableColumn<>("Item Price");
 		priceColumn
-				.setCellValueFactory(cellData -> new SimpleDoubleProperty(cellData.getValue().getPrice()).asObject());
+				.setCellValueFactory(cellData -> new SimpleDoubleProperty(cellData.getValue().getItemPrice()).asObject());
 
-		TableColumn<Item, String> statusColumn = new TableColumn<>("Status");
-		statusColumn.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getStatus()));
+		TableColumn<Item, String> statusColumn = new TableColumn<>("Item Status");
+		statusColumn.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getItemStatus()));
 
 		itemTable.getColumns().addAll(idColumn, nameColumn, categoryColumn, sizeColumn, priceColumn, statusColumn);
 
@@ -118,14 +119,24 @@ public class SellerView {
 		offerTable = new TableView<>();
 
 		TableColumn<Offer, Integer> offerIdColumn = new TableColumn<>("Offer ID");
+		offerIdColumn.setCellValueFactory(cellData -> new SimpleIntegerProperty(cellData.getValue().getOfferID()).asObject());
+		
 		TableColumn<Offer, Integer> itemIdColumn = new TableColumn<>("Item ID");
+		itemIdColumn.setCellValueFactory(cellData -> new SimpleIntegerProperty(cellData.getValue().getItemID()).asObject());
+		
 		TableColumn<Offer, Integer> buyerIdColumn = new TableColumn<>("Buyer ID");
+		buyerIdColumn.setCellValueFactory(cellData -> new SimpleIntegerProperty(cellData.getValue().getBuyerID()).asObject());
+
 		TableColumn<Offer, Double> priceColumn = new TableColumn<>("Offer Price");
+		priceColumn.setCellValueFactory(cellData -> new SimpleDoubleProperty(cellData.getValue().getOfferItemPrice()).asObject());
+		
 		TableColumn<Offer, String> statusColumn = new TableColumn<>("Status");
+		statusColumn.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getItemStatus()));
+
 
 		offerTable.getColumns().addAll(offerIdColumn, itemIdColumn, buyerIdColumn, priceColumn, statusColumn);
 
-		HBox buttonContainer = new HBox(10);
+		HBox buttonContainer = new HBox(12);
 		buttonContainer.setAlignment(Pos.CENTER);
 
 		Button acceptButton = new Button("Accept Offer");
@@ -149,7 +160,7 @@ public class SellerView {
 		GridPane grid = new GridPane();
 		grid.setHgap(10);
 		grid.setVgap(10);
-		grid.setPadding(new Insets(20));
+		grid.setPadding(new Insets(24));
 
 		TextField nameField = new TextField();
 		TextField categoryField = new TextField();
@@ -158,11 +169,11 @@ public class SellerView {
 
 		grid.add(new Label("Item Name:"), 0, 0);
 		grid.add(nameField, 1, 0);
-		grid.add(new Label("Category:"), 0, 1);
+		grid.add(new Label("Item Category:"), 0, 1);
 		grid.add(categoryField, 1, 1);
-		grid.add(new Label("Size:"), 0, 2);
+		grid.add(new Label("Item Size:"), 0, 2);
 		grid.add(sizeField, 1, 2);
-		grid.add(new Label("Price:"), 0, 3);
+		grid.add(new Label("Item Price:"), 0, 3);
 		grid.add(priceField, 1, 3);
 
 		dialog.getDialogPane().setContent(grid);
@@ -191,7 +202,7 @@ public class SellerView {
 	private void handleEditItem() {
 		Item selectedItem = itemTable.getSelectionModel().getSelectedItem();
 		if (selectedItem == null) {
-			showAlert("Error", "Please select an item to edit.");
+			showAlert("Error", "Select an item to edit.");
 			return;
 		}
 
@@ -204,17 +215,17 @@ public class SellerView {
 		grid.setPadding(new Insets(20));
 
 		TextField nameField = new TextField(selectedItem.getItemName());
-		TextField categoryField = new TextField(selectedItem.getCategory());
-		TextField sizeField = new TextField(selectedItem.getSize());
-		TextField priceField = new TextField(String.valueOf(selectedItem.getPrice()));
+		TextField categoryField = new TextField(selectedItem.getItemCategory());
+		TextField sizeField = new TextField(selectedItem.getItemSize());
+		TextField priceField = new TextField(String.valueOf(selectedItem.getItemPrice()));
 
 		grid.add(new Label("Item Name:"), 0, 0);
 		grid.add(nameField, 1, 0);
-		grid.add(new Label("Category:"), 0, 1);
+		grid.add(new Label("Item Category:"), 0, 1);
 		grid.add(categoryField, 1, 1);
-		grid.add(new Label("Size:"), 0, 2);
+		grid.add(new Label("Item Size:"), 0, 2);
 		grid.add(sizeField, 1, 2);
-		grid.add(new Label("Price:"), 0, 3);
+		grid.add(new Label("item Price:"), 0, 3);
 		grid.add(priceField, 1, 3);
 
 		dialog.getDialogPane().setContent(grid);
@@ -224,10 +235,10 @@ public class SellerView {
 			if (buttonType == ButtonType.OK) {
 				try {
 					double price = Double.parseDouble(priceField.getText());
-					return new Item(selectedItem.getItemID(), sellerId, nameField.getText(), categoryField.getText(),
-							sizeField.getText(), price, selectedItem.getStatus(), selectedItem.getDeclineReason());
+					return new Item(selectedItem.getItemID(), nameField.getText(), categoryField.getText(),
+							sizeField.getText(), price, sellerId, selectedItem.getStatus(), selectedItem.getReasonToDecline());
 				} catch (NumberFormatException e) {
-					showAlert("Error", "Price must be a valid number.");
+					showAlert("Error", "Price must be a number.");
 					return null;
 				}
 			}
@@ -243,7 +254,7 @@ public class SellerView {
 	private void handleDeleteItem() {
 		Item selectedItem = itemTable.getSelectionModel().getSelectedItem();
 		if (selectedItem == null) {
-			showAlert("Error", "Please select an item to delete.");
+			showAlert("Error", "Select an item to delete.");
 			return;
 		}
 
@@ -268,7 +279,7 @@ public class SellerView {
 
 		Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
 		alert.setTitle("Accept Offer");
-		alert.setContentText("Are you sure you want to accept this offer?");
+		alert.setContentText("Do you want to accept this offer?");
 
 		alert.showAndWait().ifPresent(response -> {
 			if (response == ButtonType.OK) {
@@ -282,18 +293,18 @@ public class SellerView {
 	private void handleDeclineOffer() {
 		Offer selectedOffer = offerTable.getSelectionModel().getSelectedItem();
 		if (selectedOffer == null) {
-			showAlert("Error", "Please select an offer to decline.");
+			showAlert("Error", "Select an offer to decline.");
 			return;
 		}
 
 		TextInputDialog dialog = new TextInputDialog();
 		dialog.setTitle("Decline Offer");
-		dialog.setHeaderText("Enter reason for declining:");
+		dialog.setHeaderText("Reason for declining:");
 		dialog.setContentText("Reason:");
 
 		dialog.showAndWait().ifPresent(reason -> {
 			if (reason.trim().isEmpty()) {
-				showAlert("Error", "Decline reason cannot be empty.");
+				showAlert("Error", "Decline reason must be filled.");
 				return;
 			}
 			offerController.declineOffer(selectedOffer.getOfferID(), reason);
@@ -313,8 +324,6 @@ public class SellerView {
 	private void refreshItemList() {
 		itemTable.getItems().clear();
 		List<Item> items = itemController.viewItems(sellerId);
-		// ini buat mastiin udh masuk aja
-//	    System.out.println("Jumlah item: " + items.size());
 		itemTable.getItems().addAll(items);
 	}
 

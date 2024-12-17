@@ -1,118 +1,246 @@
 package views.homepage;
 
-import java.util.List;
-import model.Item;
-import controller.WishlistController;
-import controller.PurchaseController;
+import controller.ItemController;
 import controller.OfferController;
-import controller.TransactionController;
-import model.Wishlist;
-import model.Transaction;
+import controller.UserController;
+import database.DatabaseConnector;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TextInputDialog;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
+import model.Item;
+import model.Offer;
+import views.auth.LoginView;
 
 public class BuyerView {
+	
+	private Stage stage;
+	private Scene scene;
+	private VBox mainContainer;
+	private TableView<Item> itemTable;
+	private ItemController itemController;
+	private int buyerId;
 
-    private WishlistController wishlistController;
-    private PurchaseController purchaseController;
-    private OfferController offerController;
-    private TransactionController transactionController;
+	public BuyerView(Stage stage, int buyerId) {
+		this.stage = stage;
+		this.buyerId = buyerId;
+		this.itemController = ItemController.getInstance();
+		initialize();
+	}
+	
+	private void initialize() {
+		mainContainer = new VBox(24);
+		mainContainer.setPadding(new Insets(15));
+		mainContainer.setAlignment(Pos.CENTER);
 
-    public BuyerView() {
-        wishlistController = WishlistController.getInstance();
-        purchaseController = PurchaseController.getInstance();
-        offerController = OfferController.getInstance();
-        transactionController = TransactionController.getInstance();
-    }
+		Label headerLabel = new Label("Buyer Dashboard");
+		headerLabel.setStyle("-fx-font-size: 28px; -fx-font-weight: bold;");
 
-    // Display all items in the buyer's wishlist
-    public void viewWishlist(int buyerID) {
-        List<Item> wishlistItems = wishlistController.viewWishlist(buyerID);
-        System.out.println("Wishlist Items:");
-        for (Item item : wishlistItems) {
-            System.out.println(item.getItemName() + " | " + item.getItemCategory() + " | " + item.getItemPrice());
-        }
-    }
+		setupItemTable();
 
-    // Add an item to the buyer's wishlist
-    public void addItemToWishlist(int buyerID, Item item) {
-        Wishlist wishlist = new Wishlist(buyerID, item.getItemID());
-        wishlistController.addItemToWishlist(wishlist);
-        System.out.println("Item added to wishlist successfully.");
-    }
+		HBox buttonContainer = new HBox(12);
+		HBox logoutContainer = new HBox(12);
+		buttonContainer.setAlignment(Pos.CENTER);
+		logoutContainer.setAlignment(Pos.CENTER);
 
-    // Remove an item from the wishlist
-    public void removeItemFromWishlist(int buyerID, Item item) {
-        Wishlist wishlist = new Wishlist(buyerID, item.getItemID());
-        wishlistController.removeItemFromWishlist(wishlist);
-        System.out.println("Item removed from wishlist successfully.");
-    }
+		Button buyButton = new Button("Buy Item");
+		Button wishlistButton = new Button("Add to Wishlist");
+		Button makeOfferButton = new Button("Offer Price");
+		Button viewWishlistButton = new Button("View Wishlist");
+		Button viewTransactionsHitoryButton = new Button("View Transactions History");
+		Button logoutButton = new Button("Logout");
 
-    // Confirm purchase of an item
-    public void purchaseItem(int buyerID, Item item) {
-        // Generate a new transaction ID and add the purchase
-        Transaction transaction = new Transaction(buyerID, item.getItemID());
-        transactionController.createTransaction(transaction);
-        purchaseController.deleteItemFromWishlist(buyerID, item.getItemID()); // Remove from wishlist
-        System.out.println("Item purchased successfully!");
-    }
+		buttonContainer.getChildren().addAll(buyButton, wishlistButton, makeOfferButton, viewWishlistButton, viewTransactionsHitoryButton);
+		logoutContainer.getChildren().addAll(logoutButton);
+		mainContainer.getChildren().addAll(headerLabel, itemTable, buttonContainer, logoutContainer);
 
-    // Make an offer on an item
-    public void makeOffer(int buyerID, Item item, double offerPrice) {
-        if (offerPrice <= 0) {
-            System.out.println("Offer price must be greater than zero.");
-            return;
-        }
+		buyButton.setOnAction(e -> handleBuyItem());
+		wishlistButton.setOnAction(e -> handleWishlistItem());
+		makeOfferButton.setOnAction(e -> handleMakeOfferItem());
+		viewWishlistButton.setOnAction(e -> handleViewWishlist());
+		viewTransactionsHitoryButton.setOnAction(e -> handleViewTrxHistory());
+		logoutButton.setOnAction(e -> handleLogout());
 
-        if (offerController.canMakeOffer(item.getItemID(), offerPrice)) {
-            offerController.placeOffer(buyerID, item.getItemID(), offerPrice);
-            System.out.println("Offer placed successfully.");
-        } else {
-            System.out.println("Offer must be higher than the current offer.");
-        }
-    }
+		scene = new Scene(mainContainer, 800, 600);
+		stage.setTitle("CaLouselF - Buyer Dashboard");
+	}
+	
+	private void setupItemTable() {
+		itemTable = new TableView<>();
 
-    // View purchase history of the buyer
-    public void viewPurchaseHistory(int buyerID) {
-        List<Transaction> transactions = transactionController.getPurchaseHistory(buyerID);
-        System.out.println("Purchase History:");
-        for (Transaction transaction : transactions) {
-            System.out.println("Transaction ID: " + transaction.getTransactionID());
-            Item item = purchaseController.getItemByTransactionID(transaction.getItemID());
-            System.out.println(item.getItemName() + " | " + item.getItemCategory() + " | " + item.getItemPrice());
-        }
-    }
+		TableColumn<Item, Integer> idColumn = new TableColumn<>("Item ID");
+		idColumn.setCellValueFactory(data -> new SimpleObjectProperty<>(data.getValue().getItemID()));
 
-    // View offered items as a seller
-    public void viewOfferedItems(int sellerID) {
-        List<Item> offeredItems = offerController.getOfferedItems(sellerID);
-        System.out.println("Offered Items:");
-        for (Item item : offeredItems) {
-            System.out.println(item.getItemName() + " | " + item.getItemCategory() + " | Initial Price: "
-                    + item.getItemPrice() + " | Offered Price: " + offerController.getHighestOffer(item.getItemID()));
-        }
-    }
+		TableColumn<Item, String> nameColumn = new TableColumn<>("Item Name");
+		nameColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getItemName()));
 
-    // View items pending review (Admin function)
-    public void viewRequestedItems() {
-        List<Item> requestedItems = purchaseController.getRequestedItems();
-        System.out.println("Requested Items for Review:");
-        for (Item item : requestedItems) {
-            System.out.println(item.getItemName() + " | " + item.getItemCategory() + " | " + item.getItemPrice());
-        }
-    }
+		TableColumn<Item, String> categoryColumn = new TableColumn<>("Item Category");
+		categoryColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getItemCategory()));
 
-    // Approve an item (Admin function)
-    public void approveItem(Item item) {
-        purchaseController.approveItem(item);
-        System.out.println("Item approved for sale.");
-    }
+		TableColumn<Item, String> sizeColumn = new TableColumn<>("Item Size");
+		sizeColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getItemSize()));
 
-    // Decline an item (Admin function)
-    public void declineItem(Item item, String reason) {
-        if (reason.isEmpty()) {
-            System.out.println("Reason for decline cannot be empty.");
-            return;
-        }
-        purchaseController.declineItem(item, reason);
-        System.out.println("Item declined: " + reason);
-    }
+		TableColumn<Item, Double> priceColumn = new TableColumn<>("Item Price");
+		priceColumn.setCellValueFactory(data -> new SimpleObjectProperty<>(data.getValue().getItemPrice()));
+
+		itemTable.getColumns().addAll(idColumn, nameColumn, categoryColumn, sizeColumn, priceColumn);
+
+		VBox.setVgrow(itemTable, Priority.ALWAYS);
+		itemTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
+		refreshItemList();
+	}
+	
+	private void refreshItemList() {
+		itemTable.getItems().clear();
+		itemTable.getItems().addAll(itemController.viewItemsToBuy());
+	}
+
+	private void handleBuyItem() {
+		Item selectedItem = itemTable.getSelectionModel().getSelectedItem();
+		if (selectedItem == null) {
+			showAlert("Error", "Select an item you want to buy!");
+			return;
+		}
+	// confirmation
+	    Alert confirmationAlert = new Alert(Alert.AlertType.CONFIRMATION);
+	    confirmationAlert.setTitle("Confirmation");
+	    confirmationAlert.setHeaderText("Warning !");
+	    confirmationAlert.setContentText(
+	        String.format("Are you sure you want to buy the item: %s for $%.2f?", 
+	        selectedItem.getItemName(),  
+	        selectedItem.getPrice()));
+	    confirmationAlert.showAndWait().ifPresent(response -> {
+	        if (response.getText().equalsIgnoreCase("OK")) {
+	            try {
+	                String insertTransactionQuery = String.format(
+	                    "INSERT INTO Transactions (BuyerID, ItemID, TotalPrice) VALUES (%d, %d, %.2f)",
+	                    this.buyerId,
+	                    selectedItem.getItemID(),
+	                    selectedItem.getItemPrice()
+	                );
+	                DatabaseConnector.getInstance().execute(insertTransactionQuery);
+
+	                String deleteWishlistQuery = String.format(
+	                    "DELETE FROM Wishlist WHERE BuyerID = %d AND ItemID = %d",
+	                    this.buyerId,
+	                    selectedItem.getItemID()
+	                );
+	                DatabaseConnector.getInstance().execute(deleteWishlistQuery);
+
+	                showAlert("Success", "Item has been purchased.");
+	                refreshItemList();
+	            } catch (Exception e) {
+	                e.printStackTrace();
+	                showAlert("Error", "Theres ann error occurred while processing your purchase.");
+	            }
+	        } else {
+	            showAlert("Cancelled", "The item purchase is cancelled!");
+	        }
+	    });
+	}
+
+	private void handleWishlistItem() {
+		Item selectedItem = itemTable.getSelectionModel().getSelectedItem();
+		if (selectedItem == null) {
+			showAlert("Error", "Select an item to add to the wishlist.");
+			return;
+		}
+		
+		String queryWishlist = String.format("INSERT INTO wishlist (BuyerID, ItemID) VALUES(%d, %d);",
+				this.buyerId, selectedItem.getItemID());
+		DatabaseConnector.getInstance().execute(queryWishlist);
+		
+		showAlert("Success", "Item has been added to wishlist.");
+		refreshItemList();
+	}
+	
+	private void handleMakeOfferItem() {
+	    Item selectedItem = itemTable.getSelectionModel().getSelectedItem();
+	    if (selectedItem == null) {
+	        showAlert("Error", "Select an item to make your offer!");
+	        return;
+	    }
+
+	    // input harga
+	    TextInputDialog offerDialog = new TextInputDialog();
+	    offerDialog.setTitle("Make an Offer");
+	    offerDialog.setHeaderText(String.format("Make an offer for item: %s (ID: %d)", 
+	        selectedItem.getItemName(), 
+	        selectedItem.getItemID()));
+	    offerDialog.setContentText("Pleas enter your offer price:");
+
+	    // input user handle
+	    offerDialog.showAndWait().ifPresent(offerPriceStr -> {
+	        if (offerPriceStr.trim().isEmpty()) {
+	            showAlert("Error", "Offer price must be filled!");
+	            return;
+	        }
+
+	        try {
+	            double offerPrice = Double.parseDouble(offerPriceStr);
+	            if (offerPrice <= 0) {
+	                showAlert("Error", "Offer must be greater than zero!");
+	                return;
+	            }
+
+	            Offer newOffer = new Offer(0, selectedItem.getItemID(), this.buyerId, offerPrice, "Pending", "N/A");
+	            OfferController offerController = OfferController.getInstance();
+
+	            // valid = insert to database
+	            offerController.makeOffer(newOffer);
+	            showAlert("Success", "Offer has been submitted! Status: Pending.");
+
+	        } catch (NumberFormatException e) {
+	            showAlert("Error", "Please enter a valid offer (numbers)!");
+	        } catch (Exception e) {
+	            e.printStackTrace();
+	            showAlert("Error", "Theres an error occurred while submitting your offer.");
+	        }
+	    });
+	}
+
+	
+	private void handleViewWishlist() {
+		WishlistView wishlistView = new WishlistView(stage, this.buyerId);
+		stage.setScene(wishlistView.getScene());
+		stage.show();
+	}
+	
+	private void handleViewTrxHistory() {
+		PurchaseHistoryView purchaseHistoryView = new PurchaseHistoryView(stage, this.buyerId);
+		stage.setScene(purchaseHistoryView.getScene());
+		stage.show();
+	}
+
+	private void handleLogout() {
+		try {
+			new LoginView().start(stage);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	private void showAlert(String title, String content) {
+		Alert alert = new Alert(Alert.AlertType.ERROR);
+		alert.setTitle(title);
+		alert.setContentText(content);
+		alert.showAndWait();
+	}
+
+	public Scene getScene() {
+		return scene;
+	}
+
 }
