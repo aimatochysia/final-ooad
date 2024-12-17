@@ -76,7 +76,7 @@ public class WishlistView {
 			categoryColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getItemCategory()));
 
 			TableColumn<Item, String> sizeColumn = new TableColumn<>("Item Size");
-			sizeColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getItem Size()));
+			sizeColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getItemSize()));
 
 			TableColumn<Item, Double> priceColumn = new TableColumn<>("Item Price");
 			priceColumn.setCellValueFactory(data -> new SimpleObjectProperty<>(data.getValue().getItemPrice()));
