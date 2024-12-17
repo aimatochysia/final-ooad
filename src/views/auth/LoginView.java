@@ -19,7 +19,7 @@ public class LoginView extends Application {
 		UserController userController = UserController.getInstance();
 
 		Label title = new Label("CaLouselF");
-		title.setStyle(
+		title.setStyle( 
 				"-fx-font-family: 'Arial'; -fx-font-size: 48px; -fx-font-weight: bolder; -fx-font-style: italic;");
 
 		Label subtitle = new Label("Login Page");
