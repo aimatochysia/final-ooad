@@ -4,78 +4,65 @@ public class Offer {
 	private int offerID;
 	private int itemID;
 	private int buyerID;
-	private double offerPrice;
+	private double offerItemPrice;
 	private String itemStatus;
 	private String reasonForDecline;
 
-	public Offer(int offerID, int itemID, int buyerID, double offerPrice, String itemStatus, String reasonForDecline) 
-	{
+	public Offer(int offerID, int itemID, int buyerID, double offerItemPrice, String itemStatus, String reasonForDecline) {
 		super();
 		this.offerID = offerID;
 		this.itemID = itemID;
 		this.buyerID = buyerID;
-		this.offerPrice = offerPrice;
-		this.itemStatus = status;
+		this.offerItemPrice = offerItemPrice;
+		this.itemStatus = itemStatus;
 		this.reasonForDecline = reasonForDecline;
 	}
 
-	public int getOfferID() 
-	{
+	public int getOfferID() {
 		return offerID;
 	}
 
-	public void setOfferID(int offerID) 
-	{
+	public void setOfferID(int offerID) {
 		this.offerID = offerID;
 	}
 
-	public int getItemID() 
-	{
+	public int getItemID() {
 		return itemID;
 	}
 
-	public void setItemID(int itemID) 
-	{
+	public void setItemID(int itemID) {
 		this.itemID = itemID;
 	}
 
-	public int getBuyerID() 
-	{
+	public int getBuyerID() {
 		return buyerID;
 	}
 
-	public void setBuyerID(int buyerID) 
-	{
+	public void setBuyerID(int buyerID) {
 		this.buyerID = buyerID;
 	}
 
-	public double getOfferPrice() 
-	{
-		return offerPrice;
+	public double getOfferItemPrice() {
+		return offerItemPrice;
 	}
 
-	public void setOfferPrice(double offerPrice) 
-	{
-		this.offerPrice = offerPrice;
+	public void setOfferItemPrice(double offerItemPrice) {
+		this.offerItemPrice = offerItemPrice;
 	}
 
-	public String getItemStatus() 
-	{
+	public String getItemStatus() {
 		return itemStatus;
 	}
 
-	public void setItemStatus(String itemStatus) 
-	{
-		this.ItemStatus = itemStatus;
+	public void setItemStatus(String itemStatus) {
+		this.itemStatus = itemStatus;
 	}
 
-	public String getReasonForDecline() 
-	{
+	public String getReasonForDecline() {
 		return reasonForDecline;
 	}
 
-	public void setDeclineReason(String declineReason) 
-	{
-		this.declineReason = declineReason;
+	public void setReasonForDecline(String reasonForDecline) {
+		this.reasonForDecline = reasonForDecline;
 	}
 }

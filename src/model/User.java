@@ -2,20 +2,20 @@ package model;
 
 public class User {
 	private int userID;
+	private String role;
 	private String username;
-	private String passwordHash;
+	private String password;
 	private String phoneNumber;
 	private String address;
-	private String role;
 
-	public User(int userID, String username, String passwordHash, String phoneNumber, String address, String role) {
+	public User(int userID, String role, String username, String password, String phoneNumber, String address) {
 		super();
 		this.userID = userID;
+		this.role = role;
 		this.username = username;
-		this.passwordHash = passwordHash;
+		this.password = password;
 		this.phoneNumber = phoneNumber;
 		this.address = address;
-		this.role = role;
 	}
 
 	public int getUserID() {
@@ -26,6 +26,14 @@ public class User {
 		this.userID = userID;
 	}
 
+	public String getRole() {
+		return role;
+	}
+
+	public void setRole(String role) {
+		this.role = role;
+	}
+
 	public String getUsername() {
 		return username;
 	}
@@ -34,12 +42,12 @@ public class User {
 		this.username = username;
 	}
 
-	public String getPasswordHash() {
-		return passwordHash;
+	public String getPassword() {
+		return password;
 	}
 
-	public void setPasswordHash(String passwordHash) {
-		this.passwordHash = passwordHash;
+	public void setPassword(String password) {
+		this.password = password;
 	}
 
 	public String getPhoneNumber() {
@@ -56,13 +64,5 @@ public class User {
 
 	public void setAddress(String address) {
 		this.address = address;
-	}
-
-	public String getRole() {
-		return role;
-	}
-
-	public void setRole(String role) {
-		this.role = role;
 	}
 }

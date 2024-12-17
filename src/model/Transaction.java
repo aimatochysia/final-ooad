@@ -4,14 +4,14 @@ public class Transaction {
 	private int transactionID;
 	private int buyerID;
 	private int itemID;
-	private double totalPrice;
+	private double totalItemPrice;
 
-	public Transaction(int transactionID, int buyerID, int itemID, double totalPrice) {
+	public Transaction(int transactionID, int buyerID, int itemID, double totalItemPrice) {
 		super();
 		this.transactionID = transactionID;
 		this.buyerID = buyerID;
 		this.itemID = itemID;
-		this.totalPrice = totalPrice;
+		this.totalItemPrice = totalItemPrice;
 	}
 
 	public int getTransactionID() {
@@ -38,11 +38,11 @@ public class Transaction {
 		this.itemID = itemID;
 	}
 
-	public double getTotalPrice() {
-		return totalPrice;
+	public double getTotalItemPrice() {
+		return totalItemPrice;
 	}
 
-	public void setTotalPrice(double totalPrice) {
-		this.totalPrice = totalPrice;
+	public void setTotalItemPrice(double totalItemPrice) {
+		this.totalItemPrice = totalItemPrice;
 	}
 }
