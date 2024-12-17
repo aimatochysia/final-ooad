@@ -22,10 +22,10 @@ public class RegisterView extends Application {
         userController = UserController.getInstance();
 
         Label title = new Label("CaLouselF");
-        title.setStyle("-fx-font-family: 'Verdana'; -fx-font-size: 50px; -fx-font-weight: bold; -fx-text-fill: #4A90E2;");
+        title.setStyle("-fx-font-family: 'Verdana'; -fx-font-size: 50px; -fx-font-weight: bold;");
 
         Label subtitle = new Label("Create your account");
-        subtitle.setStyle("-fx-font-family: 'Verdana'; -fx-font-size: 22px; -fx-font-weight: semi-bold; -fx-text-fill: #7D7D7D;");
+        subtitle.setStyle("-fx-font-family: 'Verdana'; -fx-font-size: 22px; -fx-font-weight: semi-bold;");
 
         Label usernameLbl = new Label("Username:");
         TextField usernameTf = new TextField();
