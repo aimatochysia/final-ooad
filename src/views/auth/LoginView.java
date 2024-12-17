@@ -31,7 +31,7 @@ public class LoginView extends Application {
 		Label passwordLbl = new Label("Password:");
 		PasswordField passwordPf = new PasswordField();
 
-		Button loginBtn = new Button("Login");
+		Button loginBtn = new Button("Login"); 
 		Label errorLbl = new Label();
 		errorLbl.setStyle("-fx-text-fill: red;");
 
