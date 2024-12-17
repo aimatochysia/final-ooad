@@ -25,7 +25,7 @@ public class LoginView extends Application {
 		Label subtitle = new Label("Login Page");
 		subtitle.setStyle("-fx-font-family: 'Arial'; -fx-font-size: 20px; -fx-font-weight: bold;");
 
-		Label usernameLbl = new Label("Username:");
+		Label usernameLbl = new Label("Username:"); 
 		TextField usernameTf = new TextField();
 
 		Label passwordLbl = new Label("Password:");
