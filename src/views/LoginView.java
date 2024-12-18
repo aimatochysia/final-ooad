@@ -1,4 +1,4 @@
-package views.auth;
+package views;
 
 import controller.UserController;
 import javafx.application.Application;
@@ -9,9 +9,6 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import model.User;
-import views.homepage.AdminView;
-import views.homepage.BuyerView;
-import views.homepage.SellerView;
 
 public class LoginView extends Application {
 

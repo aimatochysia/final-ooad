@@ -8,8 +8,7 @@ module CaLouselF {
 	opens database;
 	opens main;
 	opens model;
-	opens views.auth;
-	opens views.homepage;
+	opens views;
 	
 	exports main;
 }

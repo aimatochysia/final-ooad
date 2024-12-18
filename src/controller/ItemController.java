@@ -9,149 +9,148 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ItemController {
-	private static ItemController instance;
-	private final DatabaseConnector db;
 
-	private ItemController() {
-		db = DatabaseConnector.getInstance();
-	}
+    private static ItemController singletonInstance;
+    private final DatabaseConnector databaseConnector;
 
-	public static ItemController getInstance() {
-		if (instance == null) {
-			instance = new ItemController();
-		}
-		return instance;
-	}
+    private ItemController() {
+        this.databaseConnector = DatabaseConnector.getInstance();
+    }
 
-	public void uploadItem(Item item) {
-		if (validateItemDetails(item)) {
-			String query = String.format(
-					"INSERT INTO Items (ItemName, itemCategory, itemSize, itemPrice, SellerID, itemStatus) VALUES ('%s', '%s', '%s', %.2f, %d, 'Pending')",
-					item.getItemName(), item.getItemCategory(), item.getItemSize(), item.getItemPrice(), item.getSellerID());
-			db.execute(query);
-			System.out.println("Item has been uploaded. Waiting for admin approval!");
-		}
-	}
+    public static ItemController getInstance() {
+        if (singletonInstance == null) {
+            synchronized (ItemController.class) {
+                if (singletonInstance == null) {
+                    singletonInstance = new ItemController();
+                }
+            }
+        }
+        return singletonInstance;
+    }
 
-	public void editItem(Item item) {
-		if (validateItemDetails(item)) {
-			String query = String.format(
-					"UPDATE Items SET ItemName = '%s', itemCategory = '%s', itemSize = '%s', itemPrice = %.2f WHERE ItemID = %d AND itemStatus = 'Approved'",
-					item.getItemName(), item.getItemCategory(), item.getItemSize(), item.getItemPrice(), item.getItemID());
-			db.execute(query);
-			System.out.println("Item details has been updated.");
-		}
-	}
+    public void uploadItem(Item item) {
+        if (!validateItemDetails(item)) return;
 
-	public void deleteItem(int itemID, int sellerID) {
-		String query = String.format("DELETE FROM Items WHERE ItemID = %d AND SellerID = %d AND itemStatus = 'Approved'",
-				itemID, sellerID);
-		db.execute(query);
-		System.out.println("Item has been deleted.");
-	}
-	
-	public List<Item> viewPendingItems() {
-	    String query = "SELECT * FROM Items WHERE itemStatus = 'Pending'";
-	    ResultSet rs = db.execQuery(query);
-	    List<Item> items = new ArrayList<>();
-	    try {
-	        while (rs.next()) {
-	            items.add(new Item(
-	                rs.getInt("ItemID"),
-	                rs.getString("ItemName"),
-	                rs.getString("itemCategory"),
-	                rs.getString("itemSize"),
-	                rs.getDouble("itemPrice"),
-	                rs.getInt("SellerID"),
-	                rs.getString("itemStatus"),
-	                rs.getString("reasonForDecline")
-	            ));
-	        }
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	    }
-	    return items;
-	}
-	
-	public List<Item> viewItems(int sellerID) {
-	    String query = String.format("SELECT * FROM Items WHERE itemStatus = 'Approved' AND SellerID = %d", sellerID);
-	    ResultSet rs = db.execQuery(query);
-	    List<Item> items = new ArrayList<>();
-	    try {
-	        while (rs.next()) {
-	            items.add(new Item(rs.getInt("ItemID"), rs.getString("ItemName"), rs.getString("itemCategory"), rs.getString("itemSize"), 
-	            		rs.getDouble("itemPrice"), rs.getInt("SellerID"), rs.getString("itemStatus"), rs.getString("reasonForDecline")));
-	        }
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	    }
-	    return items;
-	}
+        String sql = String.format(
+                "INSERT INTO Items (ItemName, itemCategory, itemSize, itemPrice, SellerID, itemStatus) " +
+                        "VALUES ('%s', '%s', '%s', %.2f, %d, 'Pending')",
+                item.getItemName(), item.getItemCategory(), item.getItemSize(), item.getItemPrice(), item.getSellerID()
+        );
 
-	private boolean validateItemDetails(Item item) {
-		if (item.getItemName() == null || item.getItemName().trim().length() < 3) {
-			System.out.println("Items name must at least be 3 character long!");
-			return false;
-		}
-		if (item.getItemCategory() == null || item.getItemCategory().trim().length() < 3) {
-			System.out.println("Items category must at least be 3 character long!");
-			return false;
-		}
-		if (item.getItemSize() == null || item.getItemSize().trim().isEmpty()) {
-			System.out.println("Item size cannot be left empty!");
-			return false;
-		}
-		if (item.getItemPrice() <= 0) {
-			System.out.println("Item price cannot be 0 or empty!");
-			return false;
-		}
-		return true;
-	}
-	
-	// view items in buyer views
-	public List<Item> viewItemsToBuy() {
-	    String query = String.format("SELECT * FROM Items WHERE itemStatus = 'Approved'");
-	    ResultSet rs = db.execQuery(query);
-	    List<Item> items = new ArrayList<>();
-	    try {
-	    	while (rs.next()) {
-	            items.add(new Item(rs.getInt("ItemID"), rs.getString("ItemName"), rs.getString("itemCategory"), rs.getString("itemSize"), 
-	            		rs.getDouble("itemPrice"), rs.getInt("SellerID"), rs.getString("itemStatus"), rs.getString("reasonForDecline")));
-	        }
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	    }
-	    return items;
-	}
-	
-	// view items in buyer wishlist
-	public List<Item> viewItemsWishlist(int buyerID) {
-	    String query = String.format(
-	            "SELECT i.ItemID, i.ItemName, i.itemCategory, i.itemSize, i.itemPrice " +
-	            "FROM wishlist w " +
-	            "JOIN items i ON w.ItemID = i.ItemID " +
-	            "WHERE w.BuyerID = %d", 
-	            buyerID
-	    );
-	    
-	    ResultSet rs = db.execQuery(query);
-	    List<Item> items = new ArrayList<>();
-	    try {
-	        while (rs.next()) {
-	            items.add(new Item(
-	                rs.getInt("ItemID"),
-	                0, 
-	                rs.getString("ItemName"),
-	                rs.getString("itemCategory"),
-	                rs.getString("itemSize"),
-	                rs.getDouble("itemPrice"),
-	                null, 
-	                null  
-	            ));
-	        }
-	    } catch (SQLException e) {
-	        e.printStackTrace();
-	    }
-	    return items;
-	}
+        try {
+            databaseConnector.execute(sql);
+            System.out.println("Item uploaded successfully. Awaiting admin approval.");
+        } catch (Exception e) {
+            System.err.println("Error uploading item: " + e.getMessage());
+        }
+    }
+
+    public void editItem(Item item) {
+        if (!validateItemDetails(item)) return;
+
+        String sql = String.format(
+                "UPDATE Items SET ItemName = '%s', itemCategory = '%s', itemSize = '%s', itemPrice = %.2f " +
+                        "WHERE ItemID = %d AND itemStatus = 'Approved'",
+                item.getItemName(), item.getItemCategory(), item.getItemSize(), item.getItemPrice(), item.getItemID()
+        );
+
+        try {
+            databaseConnector.execute(sql);
+            System.out.println("Item details updated successfully.");
+        } catch (Exception e) {
+            System.err.println("Error updating item: " + e.getMessage());
+        }
+    }
+
+    public void deleteItem(int itemID, int sellerID) {
+        String sql = String.format(
+                "DELETE FROM Items WHERE ItemID = %d AND SellerID = %d AND itemStatus = 'Approved'",
+                itemID, sellerID
+        );
+
+        try {
+            databaseConnector.execute(sql);
+            System.out.println("Item deleted successfully.");
+        } catch (Exception e) {
+            System.err.println("Error deleting item: " + e.getMessage());
+        }
+    }
+
+    public List<Item> viewPendingItems() {
+        return fetchItems("SELECT * FROM Items WHERE itemStatus = 'Pending'");
+    }
+
+    public List<Item> viewItems(int sellerID) {
+        String sql = String.format("SELECT * FROM Items WHERE itemStatus = 'Approved' AND SellerID = %d", sellerID);
+        return fetchItems(sql);
+    }
+
+    public List<Item> viewItemsToBuy() {
+        return fetchItems("SELECT * FROM Items WHERE itemStatus = 'Approved'");
+    }
+
+    public List<Item> viewItemsWishlist(int buyerID) {
+        String sql = String.format(
+                "SELECT i.ItemID, i.ItemName, i.itemCategory, i.itemSize, i.itemPrice " +
+                        "FROM wishlist w " +
+                        "JOIN items i ON w.ItemID = i.ItemID " +
+                        "WHERE w.BuyerID = %d",
+                buyerID
+        );
+
+        List<Item> items = new ArrayList<>();
+        try (ResultSet resultSet = databaseConnector.execQuery(sql)) {
+            while (resultSet.next()) {
+                items.add(mapResultSetToItem(resultSet, buyerID));
+            }
+        } catch (SQLException e) {
+            System.err.println("Error fetching wishlist items: " + e.getMessage());
+        }
+        return items;
+    }
+
+    private boolean validateItemDetails(Item item) {
+        if (item.getItemName() == null || item.getItemName().trim().length() < 3) {
+            System.out.println("Item name must be at least 3 characters long.");
+            return false;
+        }
+        if (item.getItemCategory() == null || item.getItemCategory().trim().length() < 3) {
+            System.out.println("Item category must be at least 3 characters long.");
+            return false;
+        }
+        if (item.getItemSize() == null || item.getItemSize().trim().isEmpty()) {
+            System.out.println("Item size cannot be empty.");
+            return false;
+        }
+        if (item.getItemPrice() <= 0) {
+            System.out.println("Item price must be greater than 0.");
+            return false;
+        }
+        return true;
+    }
+
+    private List<Item> fetchItems(String sql) {
+        List<Item> items = new ArrayList<>();
+        try (ResultSet resultSet = databaseConnector.execQuery(sql)) {
+            while (resultSet.next()) {
+                items.add(mapResultSetToItem(resultSet, resultSet.getInt("SellerID")));
+            }
+        } catch (SQLException e) {
+            System.err.println("Error get items: " + e.getMessage());
+        }
+        return items;
+    }
+
+    private Item mapResultSetToItem(ResultSet resultSet, int buyerID) throws SQLException {
+        return new Item(
+                resultSet.getInt("ItemID"),
+                resultSet.getString("ItemName"),
+                resultSet.getString("itemCategory"),
+                resultSet.getString("itemSize"),
+                resultSet.getDouble("itemPrice"),
+                buyerID,
+                resultSet.getString("itemStatus"),
+                resultSet.getString("reasonForDecline")
+        );
+    }
 }

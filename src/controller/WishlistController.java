@@ -10,48 +10,78 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class WishlistController {
-	private static WishlistController instance;
-	private final DatabaseConnector db;
 
-	private WishlistController() {
-		db = DatabaseConnector.getInstance();
-	}
+    private static WishlistController singletonInstance;
+    private final DatabaseConnector databaseConnector;
 
-	public static WishlistController getInstance() {
-		if (instance == null) {
-			instance = new WishlistController();
-		}
-		return instance;
-	}
+    private WishlistController() {
+        this.databaseConnector = DatabaseConnector.getInstance();
+    }
 
-	public void addItemToWishlist(Wishlist wishlist) {
-		String query = String.format("INSERT INTO Wishlist (BuyerID, ItemID) VALUES (%d, %d)", wishlist.getBuyerID(),
-				wishlist.getItemID());
-		db.execute(query);
-		System.out.println("Item has been added to Wishlist!");
-	}
+    public static WishlistController getInstance() {
+        if (singletonInstance == null) {
+            synchronized (WishlistController.class) {
+                if (singletonInstance == null) {
+                    singletonInstance = new WishlistController();
+                }
+            }
+        }
+        return singletonInstance;
+    }
 
-	public List<Item> viewWishlist(int buyerID) {
-		String query = String
-				.format("SELECT i.* FROM Wishlist w JOIN Items i ON w.ItemID = i.ItemID WHERE w.BuyerID = %d", buyerID);
-		ResultSet rs = db.execQuery(query);
-		List<Item> wishlistItems = new ArrayList<>();
-		try {
-			while (rs.next()) {
-				wishlistItems.add(new Item(rs.getInt("ItemID"), 0, rs.getString("ItemName"), rs.getString("ItemCategory"),
-						rs.getString("ItemSize"), rs.getDouble("ItemPrice"), rs.getString("ItemStatus"),
-						rs.getString("ReasonForDecline")));
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		return wishlistItems;
-	}
+    public void addItemToWishlist(Wishlist wishlist) {
+        String sql = String.format(
+                "INSERT INTO Wishlist (BuyerID, ItemID) VALUES (%d, %d)",
+                wishlist.getBuyerID(), wishlist.getItemID());
 
-	public void removeItemFromWishlist(Wishlist wishlist) {
-		String query = String.format("DELETE FROM Wishlist WHERE WishlistID = %d AND BuyerID = %d",
-				wishlist.getWishlistID(), wishlist.getBuyerID());
-		db.execute(query);
-		System.out.println("Item has been removed from Wishlist!");
-	}
+        try {
+            databaseConnector.execute(sql);
+            System.out.println("Item successfully added to Wishlist.");
+        } catch (Exception e) {
+            System.err.println("Error adding item to Wishlist: " + e.getMessage());
+        }
+    }
+
+    public List<Item> viewWishlist(int buyerID) {
+        String sql = String.format(
+                "SELECT i.* FROM Wishlist w JOIN Items i ON w.ItemID = i.ItemID WHERE w.BuyerID = %d",
+                buyerID);
+        List<Item> wishlistItems = new ArrayList<>();
+
+        try (ResultSet resultSet = databaseConnector.execQuery(sql)) {
+            while (resultSet.next()) {
+                wishlistItems.add(mapResultSetToItem(resultSet, buyerID));
+            }
+        } catch (SQLException e) {
+            System.err.println("Error fetching Wishlist: " + e.getMessage());
+        }
+
+        return wishlistItems;
+    }
+
+    public void removeItemFromWishlist(Wishlist wishlist) {
+        String sql = String.format(
+                "DELETE FROM Wishlist WHERE WishlistID = %d AND BuyerID = %d",
+                wishlist.getWishlistID(), wishlist.getBuyerID());
+
+        try {
+            databaseConnector.execute(sql);
+            System.out.println("Item successfully removed from Wishlist.");
+        } catch (Exception e) {
+            System.err.println("Error removing item from Wishlist: " + e.getMessage());
+        }
+    }
+
+    private Item mapResultSetToItem(ResultSet resultSet, int buyerID) throws SQLException {
+        return new Item(
+                resultSet.getInt("ItemID"),
+                resultSet.getString("ItemName"),
+                resultSet.getString("ItemCategory"),
+                resultSet.getString("ItemSize"),
+                resultSet.getDouble("ItemPrice"),
+                buyerID,
+                resultSet.getString("ItemStatus"),
+                resultSet.getString("ReasonForDecline")
+        );
+    }
 }

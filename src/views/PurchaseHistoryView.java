@@ -1,4 +1,4 @@
-package views.homepage;
+package views;
 
 import controller.ItemController;
 import controller.TransactionController;

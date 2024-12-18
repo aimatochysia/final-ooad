@@ -1,4 +1,4 @@
-package views.homepage;
+package views;
 
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleIntegerProperty;
@@ -16,7 +16,7 @@ import controller.ItemController;
 import controller.OfferController;
 import model.Item;
 import model.Offer;
-import views.auth.LoginView;
+import views.LoginView;
 
 public class SellerView {
 	
@@ -82,7 +82,7 @@ public class SellerView {
 		categoryColumn.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getItemCategory()));
 
 		TableColumn<Item, String> sizeColumn = new TableColumn<>("Item Size");
-		sizeColumn.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getitemSize()));
+		sizeColumn.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getItemSize()));
 
 		TableColumn<Item, Double> priceColumn = new TableColumn<>("Item Price");
 		priceColumn
@@ -183,8 +183,14 @@ public class SellerView {
 			if (buttonType == ButtonType.OK) {
 				try {
 					double price = Double.parseDouble(priceField.getText());
-					return new Item(0, sellerId, nameField.getText(), categoryField.getText(), sizeField.getText(),
-							price, "Pending", null);
+					return new Item(0, 
+							nameField.getText(), 
+							categoryField.getText(), 
+							sizeField.getText(),
+							price, 
+							sellerId, 
+							"Pending", 
+							null);
 				} catch (NumberFormatException e) {
 					showAlert("Error", "Price must be a valid number.");
 					return null;
@@ -236,7 +242,7 @@ public class SellerView {
 				try {
 					double price = Double.parseDouble(priceField.getText());
 					return new Item(selectedItem.getItemID(), nameField.getText(), categoryField.getText(),
-							sizeField.getText(), price, sellerId, selectedItem.getStatus(), selectedItem.getReasonToDecline());
+							sizeField.getText(), price, sellerId, selectedItem.getItemStatus(), selectedItem.getreasonForDecline());
 				} catch (NumberFormatException e) {
 					showAlert("Error", "Price must be a number.");
 					return null;

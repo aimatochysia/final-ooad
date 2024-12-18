@@ -9,83 +9,130 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class OfferController {
-	private static OfferController instance;
-	private final DatabaseConnector db;
 
-	private OfferController() {
-		db = DatabaseConnector.getInstance();
-	}
+    private static OfferController singletonInstance;
+    private final DatabaseConnector databaseConnector;
 
-	public static OfferController getInstance() {
-		if (instance == null) {
-			instance = new OfferController();
-		}
-		return instance;
-	}
+    private OfferController() {
+        this.databaseConnector = DatabaseConnector.getInstance();
+    }
 
-	public void makeOffer(Offer offer) {
-		double highestOffer = getHighestOffer(offer.getItemID());
-		if (offer.getOfferPrice() <= highestOffer) {
-			System.out.println("You must offer higher than the previous offers!");
-			return;
-		}
-		String query = String.format("INSERT INTO Offers (ItemID, BuyerID, OfferItemPrice) VALUES (%d, %d, %.2f)",
-				offer.getItemID(), offer.getBuyerID(), offer.getOfferItemPrice());
-		db.execute(query);
-		System.out.println("Offer has been submitted.");
-	}
+    public static OfferController getInstance() {
+        if (singletonInstance == null) {
+            synchronized (OfferController.class) {
+                if (singletonInstance == null) {
+                    singletonInstance = new OfferController();
+                }
+            }
+        }
+        return singletonInstance;
+    }
 
-	public List<Offer> viewOffers(int sellerID) {
-		String query = String.format(
-				"SELECT o.* FROM Offers o JOIN Items i ON o.ItemID = i.ItemID WHERE i.SellerID = %d AND o.ItemStatus = 'Pending'",
-				sellerID);
-		ResultSet rs = db.execQuery(query);
-		List<Offer> offers = new ArrayList<>();
-		try {
-			while (rs.next()) {
-				offers.add(new Offer(rs.getInt("OfferID"), rs.getInt("ItemID"), rs.getInt("BuyerID"),
-						rs.getDouble("OfferItemPrice"), rs.getString("ItemStatus"), rs.getString("ReasonForDecline")));
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		return offers;
-	}
+    public void makeOffer(Offer offer) {
+        double highestOffer = fetchHighestOffer(offer.getItemID());
+        if (offer.getOfferItemPrice() <= highestOffer) {
+            System.out.println("You must offer higher than the current highest offer!");
+            return;
+        }
 
-	public void acceptOffer(int offerID) {
-		String query = String.format("UPDATE Offers SET ItemStatus = 'Accepted' WHERE OfferID = %d", offerID);
-		db.execute(query);
-		removeItemAfterAcceptance(offerID);
-		System.out.println("Offer has been accepted.");
-	}
+        try {
+            String sql = String.format(
+                    "INSERT INTO Offers (ItemID, BuyerID, OfferItemPrice) VALUES (%d, %d, %.2f)",
+                    offer.getItemID(), offer.getBuyerID(), offer.getOfferItemPrice()
+            );
+            databaseConnector.execute(sql);
+            System.out.println("Offer submitted successfully.");
+        } catch (Exception e) {
+            System.err.println("Error submitting offer: " + e.getMessage());
+        }
+    }
 
-	public void declineOffer(int offerID, String reason) {
-		if (reason == null || reason.trim().isEmpty()) {
-			System.out.println("Must provide reason for declining!");
-			return;
-		}
-		String query = String.format("UPDATE Offers SET Status = 'Declined', ReasonForDecline = '%s' WHERE OfferID = %d",
-				reason, offerID);
-		db.execute(query);
-		System.out.println("Offer has been declined.");
-	}
+    public List<Offer> viewOffers(int sellerID) {
+        String sql = String.format(
+                "SELECT o.* FROM Offers o " +
+                "JOIN Items i ON o.ItemID = i.ItemID " +
+                "WHERE i.SellerID = %d AND o.ItemStatus = 'Pending'",
+                sellerID
+        );
 
-	public double getHighestOffer(int itemID) {
-		String query = String.format("SELECT MAX(OfferPrice) AS HighestOffer FROM Offers WHERE ItemID = %d", itemID);
-		ResultSet rs = db.execQuery(query);
-		try {
-			if (rs.next()) {
-				return rs.getDouble("HighestOffer");
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
-		return 0;
-	}
+        List<Offer> offers = new ArrayList<>();
+        try (ResultSet resultSet = databaseConnector.execQuery(sql)) {
+            while (resultSet.next()) {
+                offers.add(mapResultSetToOffer(resultSet));
+            }
+        } catch (SQLException e) {
+            System.err.println("Error fetching offers: " + e.getMessage());
+        }
 
-	private void removeItemAfterAcceptance(int offerID) {
-		String query = String.format("DELETE FROM Items WHERE ItemID = (SELECT ItemID FROM Offers WHERE OfferID = %d)",
-				offerID);
-		db.execute(query);
-	}
+        return offers;
+    }
+
+    public void acceptOffer(int offerID) {
+        try {
+            updateOfferStatus(offerID, "Accepted", null);
+            removeAcceptedItem(offerID);
+            System.out.println("Offer accepted successfully.");
+        } catch (Exception e) {
+            System.err.println("Error accepting offer: " + e.getMessage());
+        }
+    }
+
+    public void declineOffer(int offerID, String reason) {
+        if (reason == null || reason.trim().isEmpty()) {
+            System.out.println("A valid reason must be provided to decline the offer.");
+            return;
+        }
+
+        try {
+            updateOfferStatus(offerID, "Declined", reason);
+            System.out.println("Offer declined with reason: " + reason);
+        } catch (Exception e) {
+            System.err.println("Error declining offer: " + e.getMessage());
+        }
+    }
+
+    public double fetchHighestOffer(int itemID) {
+        String sql = String.format(
+                "SELECT MAX(OfferItemPrice) AS HighestOffer FROM Offers WHERE ItemID = %d",
+                itemID
+        );
+
+        try (ResultSet resultSet = databaseConnector.execQuery(sql)) {
+            if (resultSet.next()) {
+                return resultSet.getDouble("HighestOffer");
+            }
+        } catch (SQLException e) {
+            System.err.println("Error fetching highest offer: " + e.getMessage());
+        }
+
+        return 0;
+    }
+
+    private void updateOfferStatus(int offerID, String status, String reason) throws SQLException {
+        String sql = (reason == null) ? 
+                String.format("UPDATE Offers SET ItemStatus = '%s' WHERE OfferID = %d", status, offerID) :
+                String.format("UPDATE Offers SET ItemStatus = '%s', ReasonForDecline = '%s' WHERE OfferID = %d", 
+                              status, reason, offerID);
+
+        databaseConnector.execute(sql);
+    }
+
+    private void removeAcceptedItem(int offerID) throws SQLException {
+        String sql = String.format(
+                "DELETE FROM Items WHERE ItemID = (SELECT ItemID FROM Offers WHERE OfferID = %d)",
+                offerID
+        );
+        databaseConnector.execute(sql);
+    }
+
+    private Offer mapResultSetToOffer(ResultSet resultSet) throws SQLException {
+        return new Offer(
+                resultSet.getInt("OfferID"),
+                resultSet.getInt("ItemID"),
+                resultSet.getInt("BuyerID"),
+                resultSet.getDouble("OfferItemPrice"),
+                resultSet.getString("ItemStatus"),
+                resultSet.getString("ReasonForDecline")
+        );
+    }
 }

@@ -1,4 +1,4 @@
-package views.homepage;
+package views;
 
 import controller.ItemController;
 import database.DatabaseConnector;
@@ -18,7 +18,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import model.Item;
-import views.auth.LoginView;
+import views.LoginView;
 
 public class WishlistView {
 		

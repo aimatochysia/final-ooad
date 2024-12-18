@@ -9,116 +9,140 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class UserController {
-	private static UserController instance;
-	private final DatabaseConnector db;
 
-	private UserController() {
-		db = DatabaseConnector.getInstance();
-	}
+    private static UserController singletonInstance;
+    private final DatabaseConnector databaseConnector;
 
-	public static UserController getInstance() {
-		if (instance == null) {
-			instance = new UserController();
-		}
-		return instance;
-	}
+    private UserController() {
+        this.databaseConnector = DatabaseConnector.getInstance();
+    }
 
-	public Map<String, String> registerUser(User user, String password) {
-		Map<String, String> validationErrors = validateRegistration(user, password);
+    public static UserController getInstance() {
+        if (singletonInstance == null) {
+            synchronized (UserController.class) {
+                if (singletonInstance == null) {
+                    singletonInstance = new UserController();
+                }
+            }
+        }
+        return singletonInstance;
+    }
 
-		if (!validationErrors.isEmpty()) {
-			return validationErrors;
-		}
+    public Map<String, String> registerUser(User user, String password) {
+        Map<String, String> errors = performValidation(user, password);
 
-		try {
-			String query = String.format(
-					"INSERT INTO Users (Role, Username, Password, PhoneNumber, Address) "
-							+ "VALUES ('%s', '%s', '%s', '%s', '%s')",
-				user.getRole(), user.getUsername(), password, user.getPhoneNumber(), user.getAddress());
-			db.execute(query);
-			System.out.println("User succesfully registered.");
-		} catch (Exception e) {
-			validationErrors.put("database", "There is an error occurred during registration.");
-			e.printStackTrace();
-		}
+        if (!errors.isEmpty()) {
+            return errors;
+        }
 
-		return validationErrors;
-	}
+        try {
+            String sql = String.format(
+                    "INSERT INTO Users (Role, Username, Password, PhoneNumber, Address) VALUES ('%s', '%s', '%s', '%s', '%s')",
+                    user.getRole(), user.getUsername(), password, user.getPhoneNumber(), user.getAddress());
+            databaseConnector.execute(sql);
+            System.out.println("User successfully added to the database.");
+        } catch (Exception ex) {
+            errors.put("database", "An error occurred while registering the user.");
+            ex.printStackTrace();
+        }
 
-	public User loginUser(String username, String password) {
-		if (username.equals("admin") && password.equals("admin")) {
-			return new User(0, "admin", "", "", "", "Admin");
-		}
-		
-		try {
-			String query = String.format("SELECT * FROM Users WHERE Username = '%s'", username);
-			ResultSet rs = db.execQuery(query);
+        return errors;
+    }
 
-			if (rs.next()) {
-				String storedPassword = rs.getString("Password");
-				if (storedPassword.equals(password)) {
-					
-					return new User(rs.getString("Role"), rs.getInt("UserID"), rs.getString("Username"), storedPassword, rs.getString("PhoneNumber"), rs.getString("Address"));
-				}
-			}
-		} catch (SQLException e) {
-			e.printStackTrace();
-		}
+    public User loginUser(String username, String password) {
+        if ("admin".equals(username) && "admin".equals(password)) {
+            return new User(0, "admin", "", "", "", "Admin");
+        }
 
-		return null;
-	}
+        try {
+            String sql = String.format("SELECT * FROM Users WHERE Username = '%s'", username);
+            ResultSet resultSet = databaseConnector.execQuery(sql);
 
-	private Map<String, String> validateRegistration(User user, String password) {
-		Map<String, String> errors = new HashMap<>();
+            if (resultSet.next()) {
+                String storedPassword = resultSet.getString("Password");
+                if (storedPassword.equals(password)) {
+                    return new User(
+                            resultSet.getInt("UserID"),
+                            resultSet.getString("Role"),
+                            resultSet.getString("Username"),
+                            storedPassword,
+                            resultSet.getString("PhoneNumber"),
+                            resultSet.getString("Address"));
+                }
+            }
+        } catch (SQLException sqlException) {
+            sqlException.printStackTrace();
+        }
 
-		if (user.getUsername() == null || user.getUsername().trim().isEmpty()) {
-			errors.put("username", "Username must be filled cannot be empty!");
-		} else if (user.getUsername().length() < 3) {
-			errors.put("username", "Username must contain at least 3 characters!");
-		} else if (!isUsernameUnique(user.getUsername())) {
-			errors.put("username", "The username has already been taken!");
-		}
+        return null;
+    }
 
-		if (password == null || password.trim().isEmpty()) {
-			errors.put("password", "Password must be filled!");
-		} else if (password.length() < 8 || !containsSpecialCharacter(password)) {
-			errors.put("password", "Password must at least contains 8 characters and include special characters!");
-		}
+    private Map<String, String> performValidation(User user, String password) {
+        Map<String, String> validationErrors = new HashMap<>();
 
-		if (user.getPhoneNumber() == null || !user.getPhoneNumber().startsWith("+62")
-				|| user.getPhoneNumber().length() != 13) {
-			errors.put("phoneNumber", "Phone number have to start with +62 and should be at least 10 digits long!");
-		}
+        validateUsername(user.getUsername(), validationErrors);
+        validatePassword(password, validationErrors);
+        validatePhoneNumber(user.getPhoneNumber(), validationErrors);
+        validateAddress(user.getAddress(), validationErrors);
+        validateRole(user.getRole(), validationErrors);
 
-		if (user.getAddress() == null || user.getAddress().trim().isEmpty()) {
-			errors.put("address", "Address must be filled!");
-		}
+        return validationErrors;
+    }
 
-		if (!user.getRole().equalsIgnoreCase("Seller") && !user.getRole().equalsIgnoreCase("Buyer")) {
-			errors.put("role", "Role have to be 'Buyer' or 'Seller'.");
-		}
+    private void validateUsername(String username, Map<String, String> errors) {
+        if (username == null || username.trim().isEmpty()) {
+            errors.put("username", "Username cannot be empty.");
+        } else if (username.length() < 3) {
+            errors.put("username", "Username must be at least 3 characters long.");
+        } else if (!isUniqueUsername(username)) {
+            errors.put("username", "This username is already taken.");
+        }
+    }
 
-		return errors;
-	}
+    private void validatePassword(String password, Map<String, String> errors) {
+        if (password == null || password.trim().isEmpty()) {
+            errors.put("password", "Password cannot be empty.");
+        } else if (password.length() < 8 || !hasSpecialCharacter(password)) {
+            errors.put("password", "Password must be at least 8 characters long and contain at least one special character.");
+        }
+    }
 
-	private boolean isUsernameUnique(String username) {
-		try {
-			String query = String.format("SELECT * FROM Users WHERE Username = '%s'", username);
-			ResultSet rs = db.execQuery(query);
-			return !rs.next();
-		} catch (SQLException e) {
-			e.printStackTrace();
-			return false;
-		}
-	}
+    private void validatePhoneNumber(String phoneNumber, Map<String, String> errors) {
+        if (phoneNumber == null || !phoneNumber.startsWith("+62") || phoneNumber.length() != 13) {
+            errors.put("phoneNumber", "Phone number must start with +62 and be 13 digits long.");
+        }
+    }
 
-	private boolean containsSpecialCharacter(String password) {
-		String specialChars = "!@#$%^&*";
-		for (char c : password.toCharArray()) {
-			if (specialChars.indexOf(c) != -1) {
-				return true;
-			}
-		}
-		return false;
-	}
+    private void validateAddress(String address, Map<String, String> errors) {
+        if (address == null || address.trim().isEmpty()) {
+            errors.put("address", "Address cannot be empty.");
+        }
+    }
+
+    private void validateRole(String role, Map<String, String> errors) {
+        if (!"Seller".equalsIgnoreCase(role) && !"Buyer".equalsIgnoreCase(role)) {
+            errors.put("role", "Role must be either 'Seller' or 'Buyer'.");
+        }
+    }
+
+    private boolean isUniqueUsername(String username) {
+        try {
+            String sql = String.format("SELECT * FROM Users WHERE Username = '%s'", username);
+            ResultSet resultSet = databaseConnector.execQuery(sql);
+            return !resultSet.next();
+        } catch (SQLException exception) {
+            exception.printStackTrace();
+            return false;
+        }
+    }
+
+    private boolean hasSpecialCharacter(String password) {
+        String specialCharacters = "!@#$%^&*";
+        for (char character : password.toCharArray()) {
+            if (specialCharacters.indexOf(character) >= 0) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

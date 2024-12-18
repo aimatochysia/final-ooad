@@ -4,8 +4,8 @@ USE CaLouselF;
 
 CREATE TABLE Users (
     UserID INT AUTO_INCREMENT PRIMARY KEY,
-    Username VARCHAR(255) NOT NULL UNIQUE,
-    PasswordHash VARCHAR(255) NOT NULL,
+    Username VARCHAR(100) NOT NULL UNIQUE,
+    Password VARCHAR(100) NOT NULL,
     PhoneNumber VARCHAR(15) NOT NULL,
     Address TEXT NOT NULL,
     Role ENUM('Buyer', 'Seller') NOT NULL
@@ -13,13 +13,13 @@ CREATE TABLE Users (
 
 CREATE TABLE Items (
     ItemID INT AUTO_INCREMENT PRIMARY KEY,
+    ItemName VARCHAR(100) NOT NULL,
+    ItemCategory VARCHAR(100) NOT NULL,
+    ItemSize VARCHAR(30) NOT NULL,
+    ItemPrice DECIMAL(10, 2) NOT NULL,
     SellerID INT NOT NULL,
-    ItemName VARCHAR(255) NOT NULL,
-    Category VARCHAR(255) NOT NULL,
-    Size VARCHAR(50) NOT NULL,
-    Price DECIMAL(10, 2) NOT NULL,
-    Status ENUM('Pending', 'Approved', 'Declined') DEFAULT 'Pending',
-    DeclineReason TEXT,
+    ItemStatus ENUM('Pending', 'Approved', 'Declined') DEFAULT 'Pending',
+    ReasonForDecline TEXT,
     FOREIGN KEY (SellerID) REFERENCES Users(UserID)
 );
 
@@ -44,9 +44,9 @@ CREATE TABLE Offers (
     OfferID INT AUTO_INCREMENT PRIMARY KEY,
     ItemID INT NOT NULL,
     BuyerID INT NOT NULL,
-    OfferPrice DECIMAL(10, 2) NOT NULL,
+    OfferItemPrice DECIMAL(10, 2) NOT NULL,
     Status ENUM('Pending', 'Accepted', 'Declined') DEFAULT 'Pending',
-    DeclineReason TEXT,
+    ReasonForDecline TEXT,
     FOREIGN KEY (ItemID) REFERENCES Items(ItemID),
     FOREIGN KEY (BuyerID) REFERENCES Users(UserID)
 );

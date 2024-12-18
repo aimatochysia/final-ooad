@@ -1,7 +1,7 @@
 package main;
 
 import javafx.application.Application;
-import views.authentication.LoginView;
+import views.LoginView;
 
 public class Main {
     public static void main(String[] args) {

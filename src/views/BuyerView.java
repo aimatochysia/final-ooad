@@ -1,4 +1,4 @@
-package views.homepage;
+package views;
 
 import controller.ItemController;
 import controller.OfferController;
@@ -21,7 +21,7 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import model.Item;
 import model.Offer;
-import views.auth.LoginView;
+import views.LoginView;
 
 public class BuyerView {
 	
@@ -120,7 +120,7 @@ public class BuyerView {
 	    confirmationAlert.setContentText(
 	        String.format("Are you sure you want to buy the item: %s for $%.2f?", 
 	        selectedItem.getItemName(),  
-	        selectedItem.getPrice()));
+	        selectedItem.getItemPrice()));
 	    confirmationAlert.showAndWait().ifPresent(response -> {
 	        if (response.getText().equalsIgnoreCase("OK")) {
 	            try {

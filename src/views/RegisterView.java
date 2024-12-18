@@ -1,4 +1,4 @@
-package views.auth;
+package views;
 
 import controller.UserController;
 import javafx.application.Application;

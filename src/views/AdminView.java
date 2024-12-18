@@ -1,4 +1,4 @@
-package views.homepage;
+package views;
 
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -10,7 +10,7 @@ import controller.ItemController;
 import controller.UserController;
 import database.DatabaseConnector;
 import model.Item;
-import views.auth.LoginView;
+import views.LoginView;
 
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
